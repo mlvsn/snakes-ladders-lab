@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Interactive lab comparing BFS, DFS, UCS, Greedy and A* on Snakes &amp; Ladders: watch each algorithm search the board and compare path length, nodes expanded and compute time.">
+<meta property="og:title" content="Snakes &amp; Ladders: Search Algorithm Lab"><meta property="og:description" content="Watch BFS, DFS, UCS, Greedy and A* race across a Snakes &amp; Ladders board and compare their results."><meta property="og:type" content="website">
+<title>Snakes &amp; Ladders | Pathfinding Lab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{--bg:#f3f6fb;--ink:#17243a;--muted:#6b7a92;--line:#e4eaf3;--shadow:0 10px 30px rgba(36,59,96,.08)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-width:320px;overflow-x:hidden;line-height:1.8;color:var(--ink);font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(900px 420px at 90% -5%,#dff3f2,transparent 60%),radial-gradient(800px 420px at 0 0,#ece8fb,transparent 55%),var(--bg)}
+.wrap{max-width:1240px;margin:auto;padding:clamp(12px,3vw,26px) clamp(12px,3vw,26px) 48px}
+.setup>*,.compare>*,.algo-grid>*,.card{min-width:0}
+.meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;border-bottom:1px solid var(--line);padding:10px 0}
+.chip{background:#fff;border:1px solid #dce5ef;color:#34445d;padding:6px 12px;border-radius:12px;font-size:12px;font-weight:700}.chip.pill{background:#e7f6f9;color:#1387a1;border-color:#d5f0f5}
+.hero{text-align:center;padding:30px 8px 14px}.eyebrow{font-size:11px;letter-spacing:1.5px;color:#16a6c5;font-weight:800}
+.hero h1{font-size:clamp(30px,5vw,48px);margin:6px 0;font-weight:900;line-height:1.3}.hero p{max-width:760px;margin:8px auto 0;color:var(--muted);font-size:clamp(12px,2.6vw,14px);line-height:2}
+.section{margin-top:28px}.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}.section-head h2{font-size:19px;margin:0}.section-head p{font-size:12px;color:var(--muted);margin:2px 0 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:clamp(12px,2.4vw,18px);box-shadow:var(--shadow)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn,select{font:600 13px Inter,system-ui,sans-serif;min-height:42px;padding:0 15px;border-radius:12px;border:1px solid #d7e1ee;background:#fff;color:#2f4059;cursor:pointer;transition:transform .12s,box-shadow .2s,background .2s;touch-action:manipulation}
+.btn:active{transform:scale(.97)}@media(hover:hover){.btn:hover{box-shadow:0 6px 16px rgba(36,59,96,.12)}}
+.btn.primary{background:linear-gradient(135deg,#1d4166,#14243c);color:#fff;border-color:transparent}.btn.soft{background:#e9f7fa;color:#1688a2;border-color:#d5f0f5}.btn.on{background:#e3f6f1;border-color:#8fd6bf;color:#0f7a5b}
+.btn.sm{min-height:36px;padding:0 11px;font-size:12px}select{width:100%}
+.setup{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:16px}.side{display:flex;flex-direction:column;gap:12px}
+.field{background:#f8fafd;border:1px solid var(--line);padding:12px;border-radius:14px}.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:8px}
+.hint{font-size:12px;color:#5d6d85;line-height:1.9;margin-top:8px}.hint.err{color:#c4455b;font-weight:700}
+.legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:10px}.legend i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:6px;vertical-align:middle}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mini div{background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:10px}.mini span{font-size:11px;color:var(--muted)}.mini b{display:block;font-size:17px}
+.brk{flex-basis:100%;height:0}.tw{overflow-x:auto;margin-top:10px}.tw table{min-width:660px}.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}.rules{margin:12px 0 0;padding:10px 12px 10px 10px;background:#f8fafd;border:1px solid var(--line);border-radius:12px;font-size:12px;line-height:2;color:#3b4b63}.rules b{color:#14243c}.rules ol{margin:4px 0 0;padding-left:18px}.tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.tags span{font-size:11px;background:#f0f4f9;border-radius:20px;padding:2px 10px;color:#44546b}.route ol{margin:4px 0 0;padding-left:20px;columns:2 170px}.cell .st{display:none}.cell.pth .st{display:none;place-items:center;position:absolute;width:44%;height:44%;border-radius:50%;background:var(--c);color:#fff;font-size:.75em;font-style:normal;bottom:6%;right:6%}
+/* board */
+.board{position:relative;direction:ltr;container-type:inline-size;border-radius:14px;overflow:hidden;border:1px solid #d9e3ef;max-width:560px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr))}
+.cell{aspect-ratio:1;position:relative;display:grid;place-items:center;font-size:10px;font-size:3cqw;transition:background-color .2s,box-shadow .2s;user-select:none}
+.cell.a{background:#fbf3df}.cell.b{background:#e8f4ec}
+.cell .n{position:absolute;top:5%;left:9%;font-style:normal;font-weight:700;color:#8a7a55;font-size:.85em}.cell.b .n{color:#5a8a73}
+.cell.start{background:#cdf1e2!important}.cell.goal{background:#fcd9e0!important}.cell .mark{font-weight:800;font-size:.95em;margin-top:.5em}
+.cell.vis{background:var(--c1)!important}.cell.pth{background:var(--c2)!important}.cell.cur{box-shadow:inset 0 0 0 .6cqw var(--c)}
+.cell.pend{background:#ffe9b8!important;box-shadow:inset 0 0 0 .6cqw #e8a33a}.board.edit .cell{cursor:pointer}
+.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.route-line{fill:none;stroke:var(--c);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;stroke-width:.9;opacity:.55}@keyframes draw{to{stroke-dashoffset:0}}
+.algo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.algo-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.algo-name{display:flex;align-items:center;gap:9px}.algo-name h3{margin:0;font-size:15px}.algo-name small{display:block;color:var(--muted);font-size:11px}
+.num{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:800}.tag{font-size:10px;color:#687a93;background:#f0f4f9;padding:4px 9px;border-radius:20px}
+.algo-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}.algo-foot small{font-size:11px;color:var(--muted)}.algo-actions{display:flex;gap:6px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.metric{background:#f7f9fc;border:1px solid var(--line);padding:9px;border-radius:12px}.metric span{font-size:10px;color:var(--muted)}.metric b{display:block;font-size:15px}.metric em{font-style:normal;font-size:9px;color:#9aa5b6}
+.route{margin-top:10px;font-size:11px;line-height:2;color:#3b4b63;background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:8px 10px}.route b{color:var(--c)}.route .u{color:#159b78;font-weight:700}.route .d{color:#d0455c;font-weight:700}
+.compare{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:15px}
+table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--line)}th{color:#6d7d94;background:#f7f9fc;font-weight:700}tr:last-child td{border-bottom:0}.best{color:#159b78;font-weight:900}.dim{color:#9aa5b6}
+.note{font-size:11px;color:#8996a9;line-height:1.9;margin-top:10px}
+.chart{display:flex;flex-direction:column;gap:12px;margin-top:12px}.bar-row{display:grid;grid-template-columns:96px 1fr 44px;align-items:center;gap:8px;font-size:11px}.bar-track{height:12px;background:#edf1f6;border-radius:10px;overflow:hidden}.bar{height:100%;border-radius:10px;min-width:2px;transition:width .4s}.bar-value{text-align:right}
+.insight{margin-top:14px;padding:14px;background:#f1f8fa;border:1px solid #d9edf1;border-radius:16px}.insight h4{margin:0 0 10px;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}.kpi small{display:block;font-size:11px;color:var(--muted)}.kpi b{font-size:17px}.kpi em{display:block;font-style:normal;font-size:11px;color:#159b78}
+.notes{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}.notes li{display:flex;gap:9px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:12px;line-height:1.9}.notes li i{flex:none;width:9px;height:9px;border-radius:50%;margin-top:9px}
+.apps,.problem{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}.app{border:1px solid var(--line);border-top:4px solid var(--c);border-radius:16px;padding:14px;background:#fff}.app h4{margin:0 0 6px;font-size:14px;color:var(--c)}.app p{margin:0;font-size:12px;color:#44546b}.app .ex{margin-top:9px;background:#f7f9fc;border-radius:10px;padding:8px 10px;font-size:12px;color:#34445d}.app .ex b{color:var(--c)}
+.problem div{background:#f7f9fc;border:1px solid var(--line);padding:12px;border-radius:13px}.problem b{display:block;font-size:12px}.problem span{font-size:12px;color:var(--muted)}
+footer{text-align:center;color:#9aa5b6;font-size:11px;margin-top:30px}
+@media(max-width:900px){.setup,.compare,.algo-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bar-row{grid-template-columns:80px 1fr 40px}.btn{padding:0 12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.route-line{stroke-dashoffset:0}}
+.hero h1{letter-spacing:-.02em;font-weight:800}.eyebrow{letter-spacing:2px}body{font-feature-settings:"tnum" 1}footer{font-size:12px;color:#6b7a92;padding-top:18px;border-top:1px solid var(--line)}.btn.primary:hover{filter:brightness(1.1)}
+
+.tok{position:absolute;left:5%;top:95%;width:5.8cqw;height:5.8cqw;transform:translate(-50%,-50%) scale(var(--s,1));border-radius:50%;background:#fff;border:.65cqw solid var(--c);box-shadow:0 .5cqw 1.4cqw rgba(15,30,60,.42);z-index:3;pointer-events:none;display:grid;place-items:center;will-change:left,top,transform}
+.tok span{width:46%;height:46%;border-radius:50%;background:var(--c)}
+.tok.wait{animation:tbob 1s ease-in-out infinite}@keyframes tbob{50%{transform:translate(-50%,-50%) scale(1.14)}}
+
+.cell.trav{background:var(--c3)!important}.cell.trav .n{color:#fff}
+.cell.tcur{box-shadow:inset 0 0 0 .6cqw #fff,inset 0 0 0 1.2cqw var(--c);z-index:1}
+.tokmsg{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#e3f6f1;color:#0f6b50;font-size:12.5px;font-weight:600;line-height:1.5}.tokmsg.bad{background:#fdeaea;color:#a23b3b}
+.tlegend{display:flex;gap:6px 14px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin:0 0 12px}.tlegend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+.algo-actions{flex-wrap:wrap}
+.cell.cur{box-shadow:inset 0 0 0 .9cqw var(--c),0 0 0 .3cqw #fff;z-index:1}.cell.start .mark{font-size:.75em;margin-top:1.5em}
+.tree{margin-top:10px;border:1px solid #e3eaf3;border-radius:12px;background:#fbfcfe;padding:8px 10px}.tree-h{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}.tree-h b{color:#2f4059}.tree svg{display:block;width:100%;height:auto;margin-top:4px}
+.algo-grid.no-tree .tree{display:none}.how{font-size:12px;font-weight:600;color:#3d516b;line-height:1.45;margin:-2px 0 10px}
+.grp{grid-column:1/-1;margin:8px 0 0}.grp b{display:block;font-size:16px;color:#1d3350}.grp.inf b{color:#0f7a5b}.grp span{font-size:12.5px;color:var(--muted)}
+.tree-c{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+.sbs{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-top:10px}.sbt{border:1px solid #e3eaf3;border-radius:12px;background:#fbfcfe;padding:8px;text-align:center}.sbt svg{width:100%;height:auto;display:block;margin:4px 0}.sbt .big{font-size:24px;display:block;line-height:1.1}.sbt small{font-size:11px;color:var(--muted);display:block}
+</style></head>
+<body><div class="wrap">
+<section class="hero"><div class="eyebrow">ARTIFICIAL INTELLIGENCE · SEARCH ALGORITHM LAB</div><h1>Snakes &amp; Ladders</h1><p>Find the fewest dice throws needed to travel from square 1 to square 100 using five informed and uninformed search algorithms, on the same board, with the same cost model, each one playing back independently.</p></section>
+
+<section class="section"><div class="section-head"><div><h2>1. Game Board</h2><p>Place snakes and ladders; all five algorithms run on this same board.</p></div><button class="btn primary" id="runAll">▶ Run all five algorithms</button></div>
+<div class="setup"><div class="card"><div class="board edit" id="editor"></div><div class="legend"><span><i style="background:#a8651f"></i>Ladder (up)</span><span><i style="background:#d9534f"></i>Snake (down)</span><span><i style="background:#cdf1e2"></i>Start</span><span><i style="background:#fcd9e0"></i>Finish</span></div><div class="rules"><b>Game rules (as implemented):</b><ol><li>The game starts on square 1 and numbers zig-zag upward (first row left to right, next row right to left, …).</li><li>Each throw is a die roll of 1–6 and the token advances that many squares; e.g. from 1 a 6 lands on 7, another 6 lands on 13.</li><li>A throw that ends exactly on a ladder base climbs it (13 → 46); one that ends on a snake head slides down.</li><li>To win, the token must land exactly on 100; a throw that would overshoot 100 is not allowed.</li></ol></div></div>
+<div class="side"><div class="card"><div class="field"><label>Edit board</label><div class="toolbar"><button class="btn sm" id="mLadder">🪜 Ladder</button><button class="btn sm" id="mSnake">🐍 Snake</button><button class="btn sm" id="mErase">✕ Erase</button></div><div class="hint" id="hint"></div></div>
+<div class="toolbar" style="margin-top:12px"><button class="btn soft" id="defBtn">Default board</button><button class="btn" id="clearBtn">Clear all</button></div>
+<div class="field" style="margin-top:12px"><label for="speed">Search speed (time per step)</label><select id="speed"><option value="500">Slow · 0.5 s</option><option value="180" selected>Normal · 0.18 s</option><option value="45">Fast · 0.045 s</option></select></div>
+<div class="field" style="margin-top:12px"><label for="tokSpeed">Token speed (time per square)</label><select id="tokSpeed"><option value="620">Slow</option><option value="340" selected>Normal</option><option value="150">Fast</option></select></div><div class="toolbar" style="margin-top:12px"><button class="btn" id="pauseAll">Ⅱ Pause all</button><button class="btn soft" id="stepAll">Step all</button><button class="btn" id="resetViews">Reset view</button></div><div class="toolbar" style="margin-top:12px"><button class="btn on" id="treeBtn">🌳 Hide search trees</button></div></div>
+<div class="mini"><div><span>Squares</span><b>100</b></div><div><span>Die</span><b>1–6</b></div><div><span>Ladders</span><b id="nL">0</b></div><div><span>Snakes</span><b id="nS">0</b></div></div></div></div></section>
+
+<section class="section"><div class="section-head"><div><h2>2. Algorithm Lab</h2><p>Every search keeps choosing one thing: which square to check next.</p></div></div><div class="note" style="margin:0 0 12px"><b>In plain words:</b> the goal is to reach square 100 with the fewest dice throws. <b>Uninformed</b> searches follow a fixed rule and have no idea where square 100 is. <b>Informed</b> searches also get a hint, an estimate of how many throws are left, so they head toward the goal and check far fewer squares.</div><div class="tlegend"><span><i style="background:#9fb4c9;opacity:.6"></i>Checked by the search</span><span><i style="background:#9fb4c9"></i>Final path</span><span><i style="background:#3b6f9c"></i>Token trail</span><span><i style="background:#fff;border:3px solid #3b6f9c;box-sizing:border-box"></i>Token / current square</span></div><div class="algo-grid" id="algoGrid"></div></section>
+
+<section class="section"><div class="section-head"><div><h2>3. Comparison &amp; Analysis</h2><p>Each algorithm’s row fills in when its playback finishes.</p></div><span class="tag" id="runStatus">Not run yet</span></div>
+<div class="card" style="margin-bottom:15px"><b style="font-size:13px">Side by side: how much did each one have to check?</b><div class="note" style="margin:8px 0 0">Each dot is one square the search had to check before it found the way (the colored line is the path it found). Same scale for all five, so fewer dots means less work.</div><div class="sbs" id="sbsBody"></div><div class="note" id="sbsSum" style="margin-top:10px" hidden></div></div><div class="card"><b style="font-size:13px">Performance comparison</b><div class="tw"><table><thead><tr><th>Algorithm</th><th>Status</th><th>Path length (throws)</th><th>Nodes expanded</th><th>Nodes generated</th><th>Compute time (ms)</th><th>Playback time (s)</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+<div class="note">“Compute time” is the median of 7 consecutive runs of the algorithm itself (without drawing on the board). “Playback time” is the live stopwatch on each card and depends on the chosen speed. Expanded nodes include the goal node. Green marks the best value in each column.</div><div class="insight" id="insight"><h4>Analysis of this run</h4><div class="note" style="margin:0">Shown once all five algorithms have finished playing.</div></div></div>
+<div class="card" style="margin-top:15px"><div class="charts"><div><b style="font-size:13px">Nodes expanded</b><div class="chart" id="nodeChart"></div></div><div><b style="font-size:13px">Path length (throws)</b><div class="chart" id="lenChart"></div></div><div><b style="font-size:13px">Compute time (ms)</b><div class="chart" id="timeChart"></div></div></div></div></section>
+
+<section class="section"><div class="section-head"><div><h2>4. Conclusions &amp; Real-World Uses</h2><p>Where does each algorithm shine? With a real example.</p></div></div>
+<div class="apps" id="apps"></div><div class="insight" id="finalConclusion" style="margin-top:16px"><h4>Summary of this run</h4><div class="note" style="margin:0">Shown once all five algorithms have finished playing.</div></div></section>
+
+<section class="section"><div class="section-head"><div><h2>5. Problem Formulation</h2><p>Problem components in the intelligent-agent framework.</p></div></div><div class="card problem">
+<div><b>Agent</b><span>The player’s token</span></div><div><b>Environment</b><span>A 10×10 board with snakes and ladders</span></div><div><b>Initial state</b><span>Square 1</span></div><div><b>Goal test</b><span>Landing exactly on square 100 (throws that overshoot 100 are not allowed)</span></div>
+<div><b>Actions</b><span>Roll a die (1–6); if the token lands on a snake head or ladder base it is moved</span></div><div><b>Cost</b><span>Every throw costs 1 unit, so only the number of throws counts; it makes no difference whether you roll a 1 or a 6</span></div>
+<div><b>Heuristic</b><span>Fewest throws in a relaxed problem that ignores the snakes’ penalty; admissible and consistent (used by Greedy and A*)</span></div><div><b>Environment assumption</b><span>Discrete and fully observable; the die outcome is treated as choosable so the problem is deterministic and the answer is the fewest possible throws</span></div></div></section>
+<footer>Designed &amp; built by Mobina Lavasani</footer></div>
+<script>
+'use strict';
+/*CORE_START*/
+const START=1,GOAL=100;
+const ALGOS=[
+{id:'bfs',name:'BFS',fa:'Breadth-First Search',kind:'Uninformed',color:'#2589b4',desc:'FIFO queue'},
+{id:'dfs',name:'DFS',fa:'Depth-First Search',kind:'Uninformed',color:'#d28a32',desc:'LIFO stack, tries dice 1 first'},
+{id:'ucs',name:'UCS',fa:'Uniform-Cost Search',kind:'Uninformed',color:'#8666d9',desc:'lowest cumulative cost'},
+{id:'greedy',name:'Greedy',fa:'Greedy Best-First',kind:'Informed',color:'#d45f83',desc:'lowest h'},
+{id:'astar',name:'A*',fa:'A* Search',kind:'Informed',color:'#4d78d4',desc:'f=g+h'}];
+const DEF=[[4,25],[13,46],[33,49],[42,63],[50,69],[62,81],[74,92],[27,5],[40,3],[43,18],[54,31],[66,45],[76,58],[89,53],[99,41]];
+let jumps=new Map(DEF),adj=[];
+function buildAdj(jm){const A=[];for(let s=1;s<=100;s++){const l=[],seen=new Set([s]);for(let d=6;d>=1;d--){const t=s+d;if(t>100)continue;const to=jm.get(t)??t;if(seen.has(to))continue;seen.add(to);l.push({to,d,t})}A[s]=l}return A}
+const cost=()=>1;
+
+function buildH(){const rev=Array.from({length:101},()=>[]);for(let s=1;s<=100;s++)for(let d=1;d<=6;d++){const t=s+d;if(t>100)continue;rev[t].push(s);const j=jumps.get(t);if(j!==undefined)rev[j].push(s)}
+ const D=new Array(101).fill(Infinity);D[100]=0;const q=[100];for(let i=0;i<q.length;i++)for(const s of rev[q[i]])if(D[s]===Infinity){D[s]=D[q[i]]+1;q.push(s)}return D}
+class Heap{constructor(){this.a=[]}get size(){return this.a.length}
+ less(x,y){return x.k1!==y.k1?x.k1<y.k1:x.k2!==y.k2?x.k2<y.k2:x.seq<y.seq}
+ push(n){const a=this.a;let i=a.length;a.push(n);while(i>0){const p=(i-1)>>1;if(!this.less(n,a[p]))break;a[i]=a[p];i=p}a[i]=n}
+ pop(){const a=this.a,top=a[0],last=a.pop();if(a.length){let i=0;const n=a.length;for(;;){let l=2*i+1;if(l>=n)break;const r=l+1;if(r<n&&this.less(a[r],a[l]))l=r;if(!this.less(a[l],last))break;a[i]=a[l];i=l}a[i]=last}return top}}
+function reconstruct(prev){const p=[GOAL];let c=GOAL;while(c!==START){if(!prev.has(c))return[];c=prev.get(c);p.push(c)}return p.reverse()}
+
+function search(type){
+ const prev=new Map(),closed=new Set(),expanded=[],gen=[],generated=new Set([START]);let found=false,seq=0;
+ if(type==='bfs'){const q=[START];let hd=0;while(hd<q.length){const c=q[hd++];closed.add(c);expanded.push(c);
+   if(c!==GOAL)for(const e of adj[c]){if(generated.has(e.to))continue;generated.add(e.to);prev.set(e.to,c);q.push(e.to)}
+   gen.push(generated.size);if(c===GOAL){found=true;break}}}
+ else if(type==='dfs'){const st=[{id:START,par:0}];while(st.length){const {id:c,par}=st.pop();if(closed.has(c))continue;closed.add(c);if(par)prev.set(c,par);expanded.push(c);
+   if(c!==GOAL){const L=adj[c];for(let j=0;j<L.length;j++){const to=L[j].to;if(closed.has(to))continue;generated.add(to);st.push({id:to,par:c})}}
+   gen.push(generated.size);if(c===GOAL){found=true;break}}}
+ else{const dist=new Map([[START,0]]),H=new Heap(),T=type==='greedy'||type==='astar'?buildH():null;
+  const mk=(id,g)=>type==='ucs'?{id,g,k1:g,k2:0,seq:seq++}:type==='greedy'?{id,g,k1:T[id],k2:0,seq:seq++}:{id,g,k1:g+T[id],k2:T[id],seq:seq++};
+  H.push(mk(START,0));
+  while(H.size){const c=H.pop();if(closed.has(c.id))continue;closed.add(c.id);expanded.push(c.id);
+   if(c.id!==GOAL)for(const e of adj[c.id]){const nb=e.to;if(closed.has(nb))continue;const ng=c.g+cost(nb);
+    if(type==='greedy'){if(generated.has(nb))continue;generated.add(nb);prev.set(nb,c.id);H.push(mk(nb,ng))}
+    else if(ng<(dist.get(nb)??Infinity)){dist.set(nb,ng);prev.set(nb,c.id);generated.add(nb);H.push(mk(nb,ng))}}
+   gen.push(generated.size);if(c.id===GOAL){found=true;break}}}
+ const path=found?reconstruct(prev):[];let ac=0;for(let j=1;j<path.length;j++)ac+=cost(path[j]);
+ return{type,found,path,expanded,genTrace:gen,generated:generated.size,cost:found?ac:null,length:found?path.length-1:null,time:0};
+}
+
+function benchmark(types){const now=()=>performance.now();let sink=0;const once=t=>{sink+=search(t).expanded.length};
+ for(let w=0;w<40;w++)types.forEach(once);const reps={};
+ types.forEach(t=>{let n=1;for(;;){const s=now();for(let k=0;k<n;k++)once(t);if(now()-s>=5||n>=20000)break;n*=2}reps[t]=n});
+ const S={};types.forEach(t=>S[t]=[]);
+ for(let r=0;r<7;r++)types.forEach(t=>{const n=reps[t],s=now();for(let k=0;k<n;k++)once(t);S[t].push((now()-s)/n)});
+ const out={};types.forEach(t=>{const a=S[t].sort((x,y)=>x-y);out[t]=a[a.length>>1]});globalThis.__sink=sink;return out}
+function pathSteps(path){const o=[];for(let i=1;i<path.length;i++){const e=adj[path[i-1]].find(x=>x.to===path[i]);o.push({d:e.d,t:e.t,from:path[i-1],to:path[i],jump:e.t===path[i]?0:path[i]>e.t?1:-1})}return o}
+adj=buildAdj(jumps);
+/*CORE_END*/
+const $=id=>document.getElementById(id);
+const fa=v=>String(v);
+const fmtMs=t=>t<0.01?t.toFixed(4):t<1?t.toFixed(3):t.toFixed(2);
+const newTk=()=>({ph:'idle',segs:null,i:0,u:0,trail:null,cur:1});
+const RULE={bfs:'Rule: check the square that has waited the longest, so it spreads out wide.',dfs:'Rule: check the newest square first, so it digs deep along one path.',ucs:'Rule: check the cheapest square first. Every throw costs 1, so it acts just like BFS.',greedy:'Rule: check the square that looks closest to 100, so it rushes toward the goal.',astar:'Rule: cheapest so far + looks closest to 100, so it heads for the goal without wandering.'};
+const fresh=()=>({step:0,elapsed:0,budget:0,running:false,done:false,started:false,manual:false,tk:newTk()});
+let results={},play={},boards={},raf=0,last=0;
+const center=n=>{const i=n-1,rb=Math.floor(i/10),cc=i%10;return[(rb%2?9-cc:cc)*10+5,(9-rb)*10+5]};
+function ladderSVG(a,b){const[x1,y1]=center(a),[x2,y2]=center(b),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),px=-dy/L*1.3,py=dx/L*1.3;let r='';const n=Math.max(2,Math.floor(L/3.4));
+ for(let k=1;k<n;k++){const cx=x1+dx*k/n,cy=y1+dy*k/n;r+=`<line x1="${cx+px}" y1="${cy+py}" x2="${cx-px}" y2="${cy-py}" stroke="#d3a05a" stroke-width=".6" stroke-linecap="round"/>`}
+ return`<g><line x1="${x1+px}" y1="${y1+py}" x2="${x2+px}" y2="${y2+py}" stroke="#a8651f" stroke-width=".8" stroke-linecap="round"/><line x1="${x1-px}" y1="${y1-py}" x2="${x2-px}" y2="${y2-py}" stroke="#a8651f" stroke-width=".8" stroke-linecap="round"/>${r}</g>`}
+const SC=['#2e9e6b','#d9534f','#8a5cd6','#e08a1e','#1f8fb8'];
+function snakeSVG(a,b,k){const[x1,y1]=center(a),[x2,y2]=center(b),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),px=-dy/L,py=dx/L,amp=Math.min(3,L/7),w=2+Math.floor(L/28),S=Math.max(14,Math.round(L/1.8));const pts=[];
+ for(let i=0;i<=S;i++){const f=i/S,o=Math.sin(f*Math.PI*w)*amp;pts.push((x1+dx*f+px*o).toFixed(1)+' '+(y1+dy*f+py*o).toFixed(1))}
+ const d='M'+pts.join(' L'),c=SC[k%SC.length];
+ return`<g><path d="${d}" fill="none" stroke="${c}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1" stroke-dasharray="1 1.6" stroke-linecap="round"/><circle cx="${x1}" cy="${y1}" r="2.1" fill="${c}"/><circle cx="${x1-.7}" cy="${y1-.6}" r=".38" fill="#fff"/><circle cx="${x1+.7}" cy="${y1-.6}" r=".38" fill="#fff"/></g>`}
+function jumpsSVG(){let l='',s='',k=0;jumps.forEach((to,from)=>{if(to>from)l+=ladderSVG(from,to);else s+=snakeSVG(from,to,k++)});return l+s}
+function makeBoard(host,color,edit){host.innerHTML='';if(color){host.style.cssText=`--c:${color};--c1:${color}2e;--c2:${color}66;--c3:${color}d9`}
+ const g=document.createElement('div');g.className='grid';const cells=[];
+ for(let row=0;row<10;row++)for(let col=0;col<10;col++){const rb=9-row,n=rb*10+(rb%2?9-col:col)+1,d=document.createElement('div');
+  d._b='cell '+((row+col)%2?'b':'a')+(n===1?' start':n===100?' goal':'');d.className=d._b;d.innerHTML=`<i class="n">${fa(n)}</i>`+(n===1?'<span class="mark">Start</span>':n===100?'<span class="mark">🏁</span>':'')+'<b class="st"></b>';
+  if(edit)d.addEventListener('click',()=>onCell(n));cells[n]=d;g.appendChild(d)}
+ host.appendChild(g);const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('class','ov');svg.setAttribute('preserveAspectRatio','none');
+ svg.innerHTML='<g class="jg"></g><g class="rg"></g>';host.appendChild(svg);const b={host,cells,jg:svg.querySelector('.jg'),rg:svg.querySelector('.rg')};b.jg.innerHTML=jumpsSVG();if(!edit){const t=document.createElement('div');t.className='tok';t.innerHTML='<span></span>';host.appendChild(t);b.tok=t}return b}
+function refreshJumps(){const s=jumpsSVG();Object.values(boards).forEach(b=>b.jg.innerHTML=s);$('nL').textContent=fa([...jumps].filter(([a,b])=>b>a).length);$('nS').textContent=fa([...jumps].filter(([a,b])=>b<a).length)}
+function paint(b,r,p){const tk=p&&p.tk&&p.tk.ph!=='idle'&&p.tk.trail?p.tk:null,vis=r?new Set(r.expanded.slice(0,p.step)):null,cur=r&&p.step?r.expanded[p.step-1]:0,fin=r&&r.found&&p.done,onp=fin?new Set(r.path):null,ord=fin?new Map(r.path.map((n,i)=>[n,i])):null;
+ for(let n=1;n<=100;n++){const el=b.cells[n];let c=el._b;if(n!==1&&n!==100){if(onp&&onp.has(n)){c+=' pth';el.lastChild.textContent=fa(ord.get(n))}else if(vis&&vis.has(n))c+=' vis'}if(n===cur&&!p.done)c+=' cur';if(tk){if(tk.trail.has(n))c+=' trav';if(n===tk.cur)c+=' tcur'}if(el.className!==c)el.className=c}
+ let pts=[];if(fin){pts=[center(1)];pathSteps(r.path).forEach(s=>{for(let q=s.from+1;q<=s.t;q++)pts.push(center(q));if(s.jump)pts.push(center(s.to))})}
+ const rk=fin?pts.map(x=>x.join(',')).join(' '):'';if(b._rk!==rk){b._rk=rk;b.rg.innerHTML=fin?`<polyline class="route-line" pathLength="1" points="${rk}"/>`:''}}
+function updTime(a){const p=play[a.id];$('time-'+a.id).textContent=p.started&&!p.manual?fa((p.elapsed/1000).toFixed(2))+' s':p.manual&&p.done?'Manual':'—'}
+function updateCard(a){const r=results[a.id],p=play[a.id],pr=r&&p.started;paint(boards[a.id],r,p);treeDraw(a,r,p);
+ $('len-'+a.id).textContent=r&&p.done?(r.found?fa(r.length)+' throws':'Not found'):'—';
+ $('exp-'+a.id).textContent=pr?fa(p.step):'—';$('ep-'+a.id).textContent=pr?fa(p.step)+'% of the board':'Expanded';$('gen-'+a.id).textContent=pr?fa(p.step?r.genTrace[p.step-1]:1):'—';updTime(a);
+ $('status-'+a.id).textContent=!pr?'Ready · '+a.desc:p.done?tokStatus(r,p):`${p.running?'Playing':'Paused'} · checked ${fa(p.step)} of ${fa(r.expanded.length)} squares`;
+ const rt=$('route-'+a.id);if(r&&p.done&&r.found){rt.hidden=false;rt.innerHTML=`<b>Your route (${fa(r.length)} throws):</b> start at square 1<ol>`+pathSteps(r.path).map(s=>`<li>Roll ${fa(s.d)} → square ${fa(s.t)}${s.jump>0?` <span class="u">▲ ladder to ${fa(s.to)}</span>`:s.jump<0?` <span class="d">▼ snake to ${fa(s.to)}</span>`:''}</li>`).join('')+'</ol>'}else rt.hidden=true;
+ const b=document.querySelector(`[data-play="${a.id}"]`);const ph=p.tk.ph;b.textContent=(p.running||ph==='move')?'Ⅱ Pause':ph==='paused'?'▶ Resume':(p.done&&ph==='done')?'↻ Replay':(p.started&&!p.done)?'▶ Resume':'▶ Play';tokSync(a,r,p)}
+function renderCards(){const root=$('algoGrid');root.innerHTML='';ALGOS.forEach((a,k)=>{const c=document.createElement('article');c.className='card';c.style.setProperty('--c',a.color);
+ c.innerHTML=`<div class="algo-title"><div class="algo-name"><span class="num" style="background:${a.color}">${fa(k+1)}</span><div><h3>${a.name}</h3><small>${a.fa}</small></div></div><span class="tag">${a.kind}</span></div><div class="how">${RULE[a.id]}</div><div class="board" id="map-${a.id}"></div><div class="tree"><div class="tree-h"><b>Search tree</b><span id="ts-${a.id}">—</span></div><svg id="tsv-${a.id}" viewBox="0 0 300 150" role="img" aria-label="Search tree of ${a.name}"></svg><div class="tree-c">Each dot is a square the search checked. A lower row means more throws from the start.</div></div><div class="algo-foot"><small id="status-${a.id}"></small><div class="algo-actions"><button class="btn sm" data-step="${a.id}">Next step</button><button class="btn sm soft" data-play="${a.id}">▶ Play</button><button class="btn sm" data-reset="${a.id}">↺ Reset</button></div></div><div class="metrics"><div class="metric"><span>Path length</span><b id="len-${a.id}">—</b><em>Throws</em></div><div class="metric"><span>Nodes expanded</span><b id="exp-${a.id}">—</b><em id="ep-${a.id}">Expanded</em></div><div class="metric"><span>Nodes generated</span><b id="gen-${a.id}">—</b><em>Generated</em></div><div class="metric"><span>Playback time</span><b id="time-${a.id}">—</b><em>Live stopwatch</em></div></div><div class="tokmsg" id="tm-${a.id}" hidden></div><div class="route" id="route-${a.id}" hidden></div>`;
+ if(k===0||k===3){const h=document.createElement('div');h.className='grp'+(k?' inf':'');h.innerHTML=k?'<b>Informed search</b><span>Guided: uses a hint (an estimate of how many throws are left) to pick the most promising square.</span>':'<b>Uninformed search</b><span>Blind: follows a fixed rule and has no idea where square 100 is.</span>';root.appendChild(h)}root.appendChild(c);boards[a.id]=makeBoard($('map-'+a.id),a.color,false);c.querySelector('[data-step]').onclick=()=>stepOne(a.id);c.querySelector('[data-play]').onclick=()=>togglePlay(a.id);c.querySelector('[data-reset]').onclick=()=>resetOne(a.id);updateCard(a)})}
+
+/* ---- token animation (visual only: reads results, never changes them) ---- */
+const tokBase=()=>Number($('tokSpeed').value);
+function buildSegs(r){const segs=[];pathSteps(r.path).forEach((st,k)=>{for(let q=st.from+1;q<=st.t;q++)segs.push({k:'hop',from:q-1,to:q,w:1,th:k+1});if(st.jump)segs.push({k:st.jump>0?'ladder':'snake',from:st.t,to:st.to,w:2.4,th:k+1})});return segs}
+function tokPlace(id,p,s){const el=boards[id].tok;if(!el)return;el.style.left=p[0]+'%';el.style.top=p[1]+'%';el.style.setProperty('--s',s)}
+function startTok(id){const r=results[id],p=play[id],t=p.tk;if(!r||!r.found){t.ph='done';t.trail=new Set([1]);t.cur=1;return}t.segs=buildSegs(r);t.i=0;t.u=0;t.trail=new Set([1]);t.cur=1;t.ph='move';kickTok()}
+let traf=0,tlast=0;
+function kickTok(){if(!traf){tlast=performance.now();traf=requestAnimationFrame(tokLoop)}}
+function tokLoop(now){const dt=Math.min(64,Math.max(0,now-tlast));tlast=now;let any=false;
+ for(const a of ALGOS){const p=play[a.id],t=p&&p.tk;if(!t||t.ph!=='move')continue;any=true;tokAdvance(a,p,t,dt)}
+ traf=any?requestAnimationFrame(tokLoop):0}
+function tokAdvance(a,p,t,dt){const base=tokBase();t.u+=dt;let landed=false;
+ while(t.i<t.segs.length&&t.u>=base*t.segs[t.i].w){const g=t.segs[t.i];t.u-=base*g.w;t.cur=g.to;t.trail.add(g.to);t.i++;landed=true}
+ if(t.i>=t.segs.length){t.ph='done';tokPlace(a.id,center(t.cur),1);updateCard(a);return}
+ const g=t.segs[t.i],u=t.u/(base*g.w),A=center(g.from),B=center(g.to);let e=u,s;
+ if(g.k==='hop'){s=1+.18*Math.sin(Math.PI*u)}else{e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;s=1+.3*Math.sin(Math.PI*u)}
+ let x=A[0]+(B[0]-A[0])*e,y=A[1]+(B[1]-A[1])*e;if(g.k==='hop')y-=Math.sin(Math.PI*u)*2.2;
+ tokPlace(a.id,[x,y],s);if(landed)updateCard(a)}
+function tokStatus(r,p){const t=p.tk;if(!r.found)return'Done · no path exists';if(t.ph==='done')return'Done · token reached square 100';if(t.ph==='idle')return'Done · path found';
+ const g=t.segs[Math.min(t.i,t.segs.length-1)],lead=t.ph==='paused'?'Paused · ':'';
+ return lead+(g.k==='hop'?`Throw ${fa(g.th)} of ${fa(r.length)}: moving to square ${fa(g.to)}`:g.k==='ladder'?`🪜 Climbing ladder ${fa(g.from)} → ${fa(g.to)}`:`🐍 Sliding down snake ${fa(g.from)} → ${fa(g.to)}`)}
+function tokDone(r){const st=pathSteps(r.path),L=st.filter(x=>x.jump>0).length,S=st.filter(x=>x.jump<0).length;return`🎉 <b>Reached square 100</b> in ${fa(r.length)} moves (dice throws) · ${fa(L)} ${L===1?'ladder':'ladders'}, ${fa(S)} ${S===1?'snake':'snakes'} used`}
+function tokSync(a,r,p){const t=p.tk,b=boards[a.id],m=$('tm-'+a.id);if(!b||!b.tok||!m)return;
+ if(t.ph==='idle')tokPlace(a.id,center(1),1);else if(t.ph==='done')tokPlace(a.id,center(t.cur),1);
+ b.tok.classList.toggle('wait',!!p.running);
+ if(t.ph==='done'&&r){m.hidden=false;m.className='tokmsg'+(r.found?'':' bad');m.innerHTML=r.found?tokDone(r):'No path exists on this board, so the token stays on square 1.'}else m.hidden=true;
+ syncPause()}
+function syncPause(){const el=$('pauseAll');if(!el)return;const act=ALGOS.some(a=>{const p=play[a.id];return p&&(p.running||p.tk.ph==='move')}),par=ALGOS.some(a=>{const p=play[a.id];return p&&(p.tk.ph==='paused'||(p.started&&!p.done&&!p.running))});el.textContent=!act&&par?'▶ Resume all':'Ⅱ Pause all'}
+function pauseAll(){if(!Object.keys(results).length)return;const act=ALGOS.some(a=>play[a.id].running||play[a.id].tk.ph==='move');
+ ALGOS.forEach(a=>{const p=play[a.id],t=p.tk;if(act){if(p.running)p.running=false;if(t.ph==='move')t.ph='paused'}else{if(t.ph==='paused')t.ph='move';else if(p.started&&!p.done&&!p.running)p.running=true}});
+ kick();kickTok();ALGOS.forEach(updateCard)}
+function resetOne(id){const a=ALGOS.find(x=>x.id===id);play[id]=fresh();updateCard(a);if(Object.keys(results).length)updateComparison()}
+/* ---- search-tree view (read-only: derived from each result's expansion order) ---- */
+const viz={};
+function deriveTree(r,type){const pos=new Map(r.expanded.map((n,i)=>[n,i])),par=new Map(),dep=new Map([[START,0]]),lists=new Map(),idx=new Map(),cnt=[];
+ r.expanded.forEach(c=>{adj[c].forEach(e=>{if(!lists.has(e.to))lists.set(e.to,[]);lists.get(e.to).push(c)})});
+ r.expanded.forEach((n,i)=>{let d=0;if(n!==START){const cand=(lists.get(n)||[]).filter(c=>pos.get(c)<i);let q;
+  if(type==='dfs')q=cand[cand.length-1];else if(type==='astar'){q=cand[0];for(const c of cand)if(dep.get(c)<dep.get(q))q=c}else q=cand[0];
+  par.set(n,q);d=(dep.get(q)||0)+1;dep.set(n,d)}
+  cnt[d]=(cnt[d]||0)+1;idx.set(n,cnt[d]-1)});
+ return{par,dep,idx,cnt,maxD:cnt.length-1,widest:Math.max(...cnt)}}
+function vlev(type,n){const v=viz[type];if(!v)return 1;const d=v.dep.get(n)||0;return 1+Math.min(3,Math.floor(4*d/(v.maxD+1)))}
+function treeDraw(a,r,p){const svg=$('tsv-'+a.id),lab=$('ts-'+a.id),v=viz[a.id];if(!svg)return;
+ if(!r||!v||!p.started){svg.innerHTML='';lab.textContent='starts when you press play';return}
+ const W=300,H=150,vis=r.expanded.slice(0,p.step),dx=Math.min(16,(W-24)/Math.max(1,v.widest-1)),dy=(H-22)/Math.max(1,v.maxD),rad=Math.max(1.3,Math.min(3.4,dy*.45));
+ const X=n=>W/2+(v.idx.get(n)-(v.cnt[v.dep.get(n)]-1)/2)*dx,Y=n=>11+v.dep.get(n)*dy,seen=new Set(vis);
+ let e='',d='',md=0;const lc=[];
+ vis.forEach(n=>{const k=v.dep.get(n);md=Math.max(md,k);lc[k]=(lc[k]||0)+1;if(n!==START&&seen.has(v.par.get(n)))e+=`<line x1="${X(v.par.get(n)).toFixed(1)}" y1="${Y(v.par.get(n)).toFixed(1)}" x2="${X(n).toFixed(1)}" y2="${Y(n).toFixed(1)}"/>`});
+ vis.forEach(n=>{d+=`<circle cx="${X(n).toFixed(1)}" cy="${Y(n).toFixed(1)}" r="${rad}"/>`});
+ const cur=!p.done&&vis.length?vis[vis.length-1]:0,fin=p.done&&r.found;let pth='';
+ if(fin)pth=`<polyline fill="none" stroke="#fff" stroke-width="${(rad*1.9+2).toFixed(1)}" stroke-linejoin="round" stroke-linecap="round" points="${r.path.map(n=>X(n).toFixed(1)+','+Y(n).toFixed(1)).join(' ')}"/><polyline fill="none" stroke="${a.color}" stroke-width="${(rad*1.9).toFixed(1)}" stroke-linejoin="round" stroke-linecap="round" points="${r.path.map(n=>X(n).toFixed(1)+','+Y(n).toFixed(1)).join(' ')}"/>`;
+ svg.innerHTML=`<g stroke="${a.color}" stroke-opacity=".35" stroke-width=".8">${e}</g><g fill="${a.color}" fill-opacity=".7">${d}</g>${pth}`+(cur?`<circle cx="${X(cur).toFixed(1)}" cy="${Y(cur).toFixed(1)}" r="${(rad+3).toFixed(1)}" fill="none" stroke="${a.color}" stroke-width="1.6"/>`:'');
+ lab.textContent=`${md} throws deep · ${Math.max(...lc.filter(x=>x),1)} side by side`}
+function renderSbs(){const el=$('sbsBody'),sm=$('sbsSum');if(!el)return;
+ if(!Object.keys(results).length||!Object.keys(viz).length){el.innerHTML='<div class="note" style="margin:0;grid-column:1/-1">Press “Run all five algorithms” to see them side by side.</div>';sm.hidden=true;return}
+ const V=ALGOS.map(a=>viz[a.id]),MD=Math.max(1,...V.map(v=>v.maxD)),MW=Math.max(1,...V.map(v=>v.widest)),W=120,H=100,dx=Math.min(6,(W-12)/Math.max(1,MW-1)),dy=(H-14)/MD,rd=Math.min(1.7,Math.max(.7,dx*.4));
+ el.innerHTML=ALGOS.map(a=>{const r=results[a.id],p=play[a.id],v=viz[a.id],done=!!(p.done&&r);let svg;
+  if(done){const X=n=>W/2+(v.idx.get(n)-(v.cnt[v.dep.get(n)]-1)/2)*dx,Y=n=>7+v.dep.get(n)*dy;let e='',d='';
+   r.expanded.forEach(n=>{const q=v.par.get(n);if(n!==START&&q)e+=`<line x1="${X(q).toFixed(1)}" y1="${Y(q).toFixed(1)}" x2="${X(n).toFixed(1)}" y2="${Y(n).toFixed(1)}"/>`;d+=`<circle cx="${X(n).toFixed(1)}" cy="${Y(n).toFixed(1)}" r="${rd}"/>`});
+   const pl=r.found?`<polyline fill="none" stroke="${a.color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points="${r.path.map(n=>X(n).toFixed(1)+','+Y(n).toFixed(1)).join(' ')}"/>`:'';
+   svg=`<svg viewBox="0 0 ${W} ${H}"><g stroke="${a.color}" stroke-opacity=".28" stroke-width=".5">${e}</g><g fill="${a.color}" fill-opacity=".75">${d}</g>${pl}</svg>`}
+  else svg=`<div class="dim" style="font-size:12px;padding:38px 0">${p.started?'running…':'not run yet'}</div>`;
+  return `<div class="sbt"><div style="font-weight:800;color:${a.color}">${a.name}</div><small>${a.kind}</small>${svg}<b class="big" style="color:${a.color}">${done?fa(r.expanded.length):'—'}</b><small>squares checked</small></div>`}).join('');
+ const all=ALGOS.every(a=>play[a.id]&&play[a.id].done&&results[a.id]);
+ if(all){const n=ids=>ids.map(i=>results[i].expanded.length),U=n(['bfs','dfs','ucs']),I=n(['greedy','astar']),rg=x=>Math.min(...x)===Math.max(...x)?fa(Math.min(...x)):fa(Math.min(...x))+'–'+fa(Math.max(...x));
+  sm.hidden=false;sm.innerHTML=`<b>In short:</b> the uninformed searches (BFS, DFS, UCS) checked ${rg(U)} squares. The informed ones (Greedy, A*) checked only ${rg(I)}, because their hint told them where to go.`}else sm.hidden=true}
+function compute(){results={};ALGOS.forEach(a=>results[a.id]=search(a.id));ALGOS.forEach(a=>viz[a.id]=deriveTree(results[a.id],a.id));const t=benchmark(ALGOS.map(a=>a.id));ALGOS.forEach(a=>results[a.id].time=t[a.id])}
+function ensure(){if(!Object.keys(results).length){compute();ALGOS.forEach(a=>play[a.id]=fresh())}}
+const delay=()=>Number($('speed').value);
+function kick(){if(!raf){last=performance.now();raf=requestAnimationFrame(loop)}}
+function loop(now){const dt=Math.max(0,now-last);last=Math.max(last,now);let any=false;
+ for(const a of ALGOS){const p=play[a.id];if(!p.running)continue;any=true;const r=results[a.id];p.elapsed+=dt;p.budget+=dt/delay();let ch=false;
+  while(p.budget>=1&&p.step<r.expanded.length){p.step++;p.budget-=1;ch=true}
+  if(p.step>=r.expanded.length)finish(a.id);else if(ch)updateCard(a);else updTime(a)}
+ raf=any?requestAnimationFrame(loop):0}
+function finish(id){const p=play[id];p.running=false;p.done=true;p.step=results[id].expanded.length;startTok(id);updateCard(ALGOS.find(a=>a.id===id));updateComparison()}
+function startRun(id){play[id]=Object.assign(fresh(),{started:true,running:true});updateCard(ALGOS.find(a=>a.id===id));kick()}
+function togglePlay(id){ensure();const p=play[id],t=p.tk;if(t.ph==='move'){t.ph='paused';updateCard(ALGOS.find(a=>a.id===id));return}if(t.ph==='paused'){t.ph='move';kickTok();updateCard(ALGOS.find(a=>a.id===id));return}if(p.running){p.running=false;updateCard(ALGOS.find(a=>a.id===id));return}
+ if(p.done||p.manual){startRun(id);updateComparison();return}p.started=true;p.running=true;updateCard(ALGOS.find(a=>a.id===id));kick()}
+function stepOne(id){ensure();const p=play[id],r=results[id];if(p.done)return;p.running=false;p.manual=true;p.started=true;p.step++;if(p.step>=r.expanded.length)finish(id);else updateCard(ALGOS.find(a=>a.id===id))}
+function runAll(){stopAll();$('runStatus').textContent='Measuring compute time…';setTimeout(()=>{if(!Object.keys(results).length)compute();$('runStatus').textContent='Playing';ALGOS.forEach(a=>startRun(a.id));updateComparison()},30)}
+function stopAll(){ALGOS.forEach(a=>{if(play[a.id])play[a.id].running=false})}
+function clearOutputs(msg){renderSbs();$('resultsBody').innerHTML=`<tr><td class="empty dim" colspan="7">${msg}</td></tr>`;['nodeChart','lenChart','timeChart'].forEach(i=>$(i).innerHTML='');$('insight').innerHTML='<h4>Analysis of this run</h4><div class="note" style="margin:0">Shown once all five algorithms have finished playing.</div>';$('finalConclusion').innerHTML='<h4>Summary of this run</h4><div class="note" style="margin:0">Shown once all five algorithms have finished playing.</div>'}
+function invalidate(msg){stopAll();results={};ALGOS.forEach(a=>{play[a.id]=fresh();updateCard(a)});clearOutputs(msg||'Press play to generate results.');$('runStatus').textContent=msg?'Needs a re-run':'Not run yet'}
+function bars(el,rows,val,fmt){const mx=Math.max(...rows.map(x=>val(x.r)),1e-9);el.innerHTML=rows.map(({a,r})=>`<div class="bar-row"><span>${a.name}</span><div class="bar-track"><div class="bar" style="width:${Math.max(1,val(r)/mx*100)}%;background:${a.color}"></div></div><span class="bar-value">${fa(fmt(val(r)))}</span></div>`).join('')}
+function updateComparison(){renderSbs();const rows=ALGOS.map(a=>({a,r:results[a.id],p:play[a.id]})),dn=rows.filter(x=>x.p.done),all=dn.length===5;
+ const mn=f=>Math.min(...dn.map(x=>f(x.r))),ok=dn.filter(x=>x.r.found),minL=ok.length?Math.min(...ok.map(x=>x.r.length)):Infinity,minE=dn.length?mn(r=>r.expanded.length):0,minG=dn.length?mn(r=>r.generated):0,minT=dn.length?mn(r=>r.time):0;
+ $('resultsBody').innerHTML=rows.map(({a,r,p})=>{const n=`<td class="algo-name" data-label="Algorithm" style="color:${a.color};font-weight:800">${a.name}</td>`;
+  if(!p.done)return`<tr>${n}<td data-label="Status" class="dim">${p.running?'Playing…':'Waiting'}</td><td data-label="Path length" class="dim">—</td><td data-label="Expanded" class="dim">—</td><td data-label="Generated" class="dim">—</td><td data-label="Compute time" class="dim">—</td><td data-label="Playback time" class="dim">—</td></tr>`;
+  return`<tr>${n}<td data-label="Status">${r.found?'✓ Path found':'✕ Impossible'}</td><td data-label="Path length" class="${r.found&&r.length===minL?'best':''}">${r.found?fa(r.length):'—'}</td><td data-label="Expanded" class="${r.expanded.length===minE?'best':''}">${fa(r.expanded.length)}</td><td data-label="Generated" class="${r.generated===minG?'best':''}">${fa(r.generated)}</td><td data-label="Compute time" class="${r.time===minT?'best':''}">${fa(fmtMs(r.time))}</td><td data-label="Playback time">${p.manual?'Manual':fa((p.elapsed/1000).toFixed(2))}</td></tr>`}).join('');
+ if(!dn.length)return;
+ bars($('nodeChart'),dn,r=>r.expanded.length,v=>v);bars($('lenChart'),ok,r=>r.length,v=>v);bars($('timeChart'),dn,r=>r.time,fmtMs);
+ if(!all){$('runStatus').textContent=`${fa(dn.length)} of 5 algorithms finished`;return}
+ $('runStatus').textContent='All five algorithms finished';
+ const R=Object.fromEntries(rows.map(x=>[x.a.id,x.r])),names=f=>dn.filter(x=>f(x.r)).map(x=>x.a.name).join(', ');
+ if(!ok.length){const m='<div class="note" style="margin:0">With the current layout no algorithm reached square 100; remove some snakes.</div>';$('insight').innerHTML='<h4>Analysis of this run</h4>'+m;$('finalConclusion').innerHTML='<h4>Summary of this run</h4>'+m;return}
+ const bad=ok.filter(x=>x.r.length>minL).map(x=>`${x.a.name} (+${fa(x.r.length-minL)})`).join(', ')||'None';
+ const cmp=(a,b)=>a.expanded.length<b.expanded.length?`${fa(Math.round((1-a.expanded.length/b.expanded.length)*100))}% fewer than`:'equal to or more than';
+ const li=(c,t)=>`<li><i style="background:${c}"></i><div>${t}</div></li>`,col=id=>ALGOS.find(a=>a.id===id).color;
+ const lenTxt=r=>r.length===minL?'found an optimal path':`found a path ${fa(r.length-minL)} throws longer`;
+ $('insight').innerHTML=`<h4>Analysis of this run</h4><div class="kpis"><div class="kpi"><small>Shortest path</small><b>${fa(minL)} throws</b><em>${names(r=>r.found&&r.length===minL)}</em></div><div class="kpi"><small>Fewest nodes expanded</small><b>${fa(minE)} nodes</b><em>${names(r=>r.expanded.length===minE)}</em></div><div class="kpi"><small>Fastest compute</small><b>${fa(fmtMs(minT))} ms</b><em>${names(r=>r.time===minT)}</em></div><div class="kpi"><small>Suboptimal (difference)</small><b style="font-size:14px">${bad}</b></div></div><ul class="notes">`
+ +li(col('bfs'),`<b>BFS &amp; UCS:</b> since every throw costs 1, both find optimal paths and expand ${fa(R.bfs.expanded.length)} and ${fa(R.ucs.expanded.length)} nodes.`)
+ +li(col('astar'),`<b>A*:</b> ${lenTxt(R.astar)} and expanded ${fa(R.astar.expanded.length)} nodes, ${cmp(R.astar,R.bfs)} BFS.`)
+ +li(col('greedy'),`<b>Greedy:</b> ${lenTxt(R.greedy)} with ${fa(R.greedy.expanded.length)} nodes; it only looks at the heuristic and ignores the cost already paid.`)
+ +li(col('dfs'),`<b>DFS:</b> ${lenTxt(R.dfs)} (${fa(R.dfs.expanded.length)} nodes); depth-first search does not guarantee the shortest path.`)
+ +li('#8a97ab','<b>Time:</b> “Compute time” is in milliseconds, while “Playback time” depends on the chosen speed; the two are not comparable.')+'</ul>';
+ const rank=[...ok].sort((x,y)=>x.r.length-y.r.length||x.r.expanded.length-y.r.expanded.length||x.r.time-y.r.time);
+ $('finalConclusion').innerHTML=`<h4>Summary of this run</h4><div class="kpis"><div class="kpi"><small>Best choice for this run</small><b>${rank[0].a.name}</b><em>${fa(rank[0].r.length)} throws · ${fa(rank[0].r.expanded.length)} nodes</em></div></div><ul class="notes">`+rank.map((x,i)=>li(x.a.color,`<b>Rank ${fa(i+1)}: ${x.a.name}</b> — ${fa(x.r.length)} throws, ${fa(x.r.expanded.length)} nodes expanded, ${fa(fmtMs(x.r.time))} ms`)).join('')+li('#8a97ab','<b>Ranking criteria:</b> shorter path first, then fewer nodes, then faster compute. If two algorithms tie on the first two, the faster one ranks higher. However quickly DFS reaches the goal, its long path keeps it near the bottom. Results are valid only for this board.')+'</ul>'}
+
+let mode='ladder',pend=0;const hint=(t,e)=>{$('hint').textContent=t;$('hint').className='hint'+(e?' err':'')};
+function setMode(m){mode=m;pend=0;[['mLadder','ladder'],['mSnake','snake'],['mErase','erase']].forEach(([i,k])=>$(i).classList.toggle('on',k===m));hint(m==='erase'?'Tap a snake head or ladder base to remove it.':m==='ladder'?'1) Select the bottom square of the ladder.':'1) Select the snake’s head square.');markPend()}
+function markPend(){boards.editor.cells.forEach((c,n)=>{if(c){const x=c._b+(n===pend?' pend':'');if(c.className!==x)c.className=x}})}
+let pend2=0;function computeSoon(){clearTimeout(pend2);pend2=setTimeout(()=>{if(!Object.keys(results).length)compute()},400)}
+function changed(){adj=buildAdj(jumps);refreshJumps();invalidate('Board changed; run again for new results.');computeSoon()}
+function onCell(n){if(mode==='erase'){for(const[a,b]of jumps)if(a===n||b===n){jumps.delete(a);changed();hint('Removed.');return}hint('This square is not a snake head or ladder base.',1);return}
+ const used=new Set();jumps.forEach((b,a)=>{used.add(a);used.add(b)});
+ if(!pend){if(used.has(n)||n===1||n===100){hint('This square can’t be used (squares 1 and 100, or one already used by another snake or ladder).',1);return}pend=n;markPend();hint(mode==='ladder'?'2) Select the top square of the ladder.':'2) Select the snake’s tail square.');return}
+ if(n===pend){pend=0;markPend();hint('Cancelled.');return}
+ if(used.has(n)){hint('This square is already in use.',1);return}
+ const ok=mode==='ladder'?n>pend+3:n<pend-3;if(!ok){hint(mode==='ladder'?'The ladder top must be at least 4 squares above its base.':'The snake’s tail must be at least 4 squares below its head.',1);return}
+ jumps.set(pend,n);pend=0;markPend();changed();hint('Added. Keep going if you like.')}
+$('mLadder').onclick=()=>setMode('ladder');$('mSnake').onclick=()=>setMode('snake');$('mErase').onclick=()=>setMode('erase');
+$('defBtn').onclick=()=>{jumps=new Map(DEF);pend=0;markPend();changed()};$('clearBtn').onclick=()=>{jumps=new Map();pend=0;markPend();changed()};
+$('runAll').onclick=runAll;$('stepAll').onclick=()=>ALGOS.forEach(a=>stepOne(a.id));
+$('pauseAll').onclick=pauseAll;$('treeBtn').onclick=()=>{const g=$('algoGrid'),on=g.classList.toggle('no-tree')===false;$('treeBtn').classList.toggle('on',on);$('treeBtn').textContent=on?'🌳 Hide search trees':'🌳 Show search trees'};$('resetViews').onclick=()=>{stopAll();results={};ALGOS.forEach(a=>{play[a.id]=fresh();updateCard(a)});clearOutputs('Press play to generate results.');$('runStatus').textContent='Not run yet'};
+const APPS=[
+['bfs','Searches in expanding rings: first every square one throw away, then two throws, and so on. That is why it always finds the shortest route, but it has to look at many squares.','Shortest path: yes','Search effort: high','Friend suggestions on social media: it checks your friends first, then friends of friends, then friends of friends of friends. Also finding the fewest moves to solve a puzzle.'],
+['dfs','Follows one route to the very end and backtracks when it hits a dead end. It needs little memory, but the route it finds is usually not short. Here it tries dice 1 first, so it creeps forward square by square.','Shortest path: not always','Search effort: low, but long route','Finding a file in deeply nested folders; games that generate random mazes; solving Sudoku (place a number, backtrack if it fails).'],
+['ucs','When each part of a route has a different cost (time or money, say), it finds the cheapest route, not necessarily the one with the fewest steps. In Snakes & Ladders every throw costs the same, so it behaves exactly like BFS.','Shortest path: yes','Search effort: high','Google Maps when you ask for the fastest route: what matters is travel time, not the number of streets. Or a ride-hailing app picking the cheapest route.'],
+['greedy','Only asks “which square looks closest to the goal?” and goes there. Very fast, but because it ignores the path already travelled it can pick a poor route.','Shortest path: not guaranteed','Search effort: low and fast','A mobile-game enemy that runs straight at you; if a wall is in the way it gets stuck or takes a long detour.'],
+['astar','Combines the cost already paid with an estimate of what is left, so it finds the shortest path while searching far less than BFS. Unlike Greedy, it also looks at the past.','Shortest path: yes','Search effort: low','Route planning in navigation apps; game characters that steer around obstacles to reach you.']];
+$('apps').innerHTML=APPS.map(([id,w,t1,t2,e])=>{const a=ALGOS.find(x=>x.id===id);return`<div class="app" style="--c:${a.color}"><h4>${a.name} · ${a.fa}</h4><p>${w}</p><div class="tags"><span>${t1}</span><span>${t2}</span></div><div class="ex"><b>Real-world example:</b> ${e}</div></div>`}).join('');
+ALGOS.forEach(a=>play[a.id]=fresh());boards.editor=makeBoard($('editor'),null,true);renderCards();refreshJumps();clearOutputs('Press play to generate results.');setMode('ladder');computeSoon();
+</script></body></html>
